@@ -1,0 +1,21 @@
+[tool.poetry]
+name = "sfs"
+version = "0.1.0"
+description = "Simple files storages"
+authors = ["flavien-hugs <flavienhugs@pm.me>"]
+packages = [{include = "src"}]
+
+[tool.poetry.dependencies]
+python = "3.12.3"
+
+
+[tool.poetry.group.dev.dependencies]
+pre-commit = "^4.0.1"
+
+
+[tool.poetry.group.test.dependencies]
+pytest = "^8.3.3"
+
+[build-system]
+requires = ["poetry-core"]
+build-backend = "poetry.core.masonry.api"
