@@ -1,0 +1,27 @@
+from enum import StrEnum
+
+
+class SfsErrorCodes(StrEnum):
+    SFS_OK = "sfs/ok"
+    SFS_ERROR = "sfs/error"
+    SFS_NOT_IMPLEMENTED = "sfs/not-implemented"
+    SFS_NOT_SUPPORTED = "sfs/not-supported"
+    SFS_INVALID_ARGUMENT = "sfs/invalid-argument"
+    SFS_INVALID_STATE = "sfs/invalid-state"
+    SFS_INVALID_OPERATION = "sfs/invalid-operation"
+    SFS_INVALID_DATA = "sfs/invalid-data"
+    SFS_INVALID_FORMAT = "sfs/invalid-format"
+    SFS_INVALID_LENGTH = "sfs/invalid-length"
+    SFS_INVALID_SIZE = "sfs/invalid-size"
+    SFS_INVALID_TYPE = "sfs/invalid-type"
+    SFS_INVALID_VALUE = "sfs/invalid-value"
+    SFS_INVALID_INDEX = "sfs/invalid-index"
+    SFS_INVALID_KEY = "sfs/invalid-key"
+    SFS_INVALID_NAME = "sfs/invalid-name"
+    SFS_INVALID_PATH = "sfs/invalid-path"
+    SFS_INVALID_FILE = "sfs/invalid-file"
+    SFS_INVALID_FOLDER = "sfs/invalid-folder"
+    SFS_INVALID_DEVICE = "sfs/invalid-device"
+    SFS_INVALID_VOLUME = "sfs/invalid-volume"
+    SFS_INVALID_RESOURCE = "sfs/invalid-resource"
+    SFS_INVALID_PERMISSION = "sfs/invalid-permission"

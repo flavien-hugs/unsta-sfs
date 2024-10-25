@@ -22,15 +22,15 @@ class SfsBaseSettings(BaseSettings):
         default="UNSTA: Simple file storage", alias="APP_TITLE", description="Title of the application"
     )
 
-    # MINIO SETTINGS
-    """
+    # STORAGE SETTINGS
+    STORAGE_HOST: str = Field(..., alias="STORAGE_HOST")
     STORAGE_API_PORT: int = Field(..., alias="STORAGE_API_PORT")
     STORAGE_ROOT_USER: str = Field(..., alias="STORAGE_ROOT_USER")
     STORAGE_ACCESS_KEY: str = Field(..., alias="STORAGE_ACCESS_KEY")
     STORAGE_SECRET_KEY: str = Field(..., alias="STORAGE_SECRET_KEY")
     STORAGE_CONSOLE_PORT: int = Field(..., alias="STORAGE_CONSOLE_PORT")
     STORAGE_ROOT_PASSWORD: str = Field(..., alias="STORAGE_ROOT_PASSWORD")
-    """
+    STORAGE_REGION_NAME: Optional[str] = Field(default="us-east-1", alias="STORAGE_REGION_NAME")
 
 
 @lru_cache()
