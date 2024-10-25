@@ -11,6 +11,8 @@ fastapi = {extras = ["standard"], version = "^0.115.3"}
 boto3 = "^1.35.48"
 python-slugify = "^8.0.4"
 fastapi-pagination = "^0.12.31"
+pydantic-settings = "^2.6.0"
+uvloop = "^0.21.0"
 
 
 [tool.poetry.group.dev.dependencies]
@@ -18,6 +20,7 @@ pre-commit = "^4.0.1"
 black = "^24.10.0"
 flake8 = "^7.1.1"
 bandit = "^1.7.10"
+flake8-pyproject = "^1.2.3"
 
 
 [tool.poetry.group.test.dependencies]
@@ -29,6 +32,17 @@ mongomock-motor = "^0.0.34"
 pytest-cov = "^5.0.0"
 pytest-mock = "^3.14.0"
 faker = "^30.8.1"
+
+[tool.flake8]
+max-line-length = 120
+exclude = [
+    ".git",
+    "__pycache__",
+    ".venv",
+    ".pytest_cache",
+    ".tox",
+    ".eggs"
+]
 
 [tool.black]
 line-length = 120
@@ -58,6 +72,8 @@ app = 'src.cli:app'
 [tool.pytest.ini_options]
 env_files = 'tests/.test.env'
 env_override_existing_values = 1
+capture = "no"
+log-cli-level = "INFO"
 python_files = "test_*.py"
 asyncio_mode = "auto"
 filterwarnings = [
