@@ -25,3 +25,5 @@ class SfsErrorCodes(StrEnum):
     SFS_INVALID_VOLUME = "sfs/invalid-volume"
     SFS_INVALID_RESOURCE = "sfs/invalid-resource"
     SFS_INVALID_PERMISSION = "sfs/invalid-permission"
+    INTERNAL_SERVER_ERROR = "app/internal-server-error"
+    REQUEST_VALIDATION_ERROR = "app/request-validation-error"

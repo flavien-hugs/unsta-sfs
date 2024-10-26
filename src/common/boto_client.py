@@ -20,9 +20,9 @@ class BotoClient:
         self.botoclient: Optional[boto3.client] = None
 
     def __call__(self, *args, **kwargs) -> boto3.client:
-        if self._botoclient is None:
+        if self.botoclient is None:
             try:
-                self._botoclient = boto3.client(
+                self.botoclient = boto3.client(
                     "s3",
                     endpoint_url=self.endpoint_url,
                     aws_access_key_id=self.aws_access_key_id,
@@ -63,6 +63,3 @@ class BotoClient:
                 status_code=status.HTTP_400_BAD_REQUEST,
             )
         return bucket_names
-
-
-botoclient = BotoClient()
