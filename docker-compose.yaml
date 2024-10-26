@@ -1,0 +1,46 @@
+version: "3.9"
+
+x-logging: &logging
+  driver: "json-file"
+  options:
+    max-size: "50m"
+    max-file: "3"
+
+services:
+    sfs.local:
+        build:
+            context: .
+            dockerfile: Dockerfile
+        restart: always
+        command: poetry run app
+        depends_on:
+            - minio.local
+        volumes:
+            - ./src:/app/src
+        ports:
+            - "9995:${APP_DEFAULT_PORT}"
+        env_file:
+            - ./dotenv/app.env
+        logging: *logging
+
+    minio.local:
+        image: minio/minio:latest
+        restart: always
+        healthcheck:
+            test: [ "CMD", "mc", "ready", "local" ]
+            interval: 5s
+            timeout: 5s
+            retries: 5
+        ports:
+            - "${STORAGE_API_PORT}:${STORAGE_API_PORT}"
+            - "${STORAGE_CONSOLE_PORT}:${STORAGE_CONSOLE_PORT}"
+        command: server --console-address ":${STORAGE_API_PORT}" /data
+        volumes:
+            - minio_storage:/data
+        env_file:
+            - ./dotenv/storage.env
+        logging: *logging
+
+volumes:
+    minio_storage:
+        driver: local
