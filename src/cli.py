@@ -15,7 +15,7 @@ def run_app():
         reload=settings.APP_RELOAD,
         log_level=settings.APP_LOG_LEVEL,
         access_log=settings.APP_ACCESS_LOG,
-        loop=settings.APP_LOOPS,
+        loop=settings.APP_LOOP,
     )
 
 

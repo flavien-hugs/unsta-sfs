@@ -45,11 +45,11 @@ down: ## Arrêter les services et supprimer les conteneurs, réseaux, volumes
 
 # Nettoie les ressources Docker non utilisées
 prune: ## Nettoyer les images, conteneurs et réseaux non utilisés
-	docker system prune -f
+	docker system prune
 
 # Nettoie les volumes Docker non utilisés
 volume: ## Nettoyer les volumes Docker non utilisés
-	docker volume prune -f
+	docker volume prune
 
 .PHONY: tests
 tests: ## Execute test
