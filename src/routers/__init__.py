@@ -1,1 +1,1 @@
-from .api import sfs_router  # noqa: F401
+from .api import router  # noqa: F401

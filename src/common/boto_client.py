@@ -1,8 +1,9 @@
+import re
 from typing import Optional
 
 import boto3
 from botocore import exceptions
-from starlette import status
+from fastapi import Depends, status
 
 from src.config import settings
 from .error_codes import SfsErrorCodes
@@ -45,21 +46,46 @@ class BotoClient:
     def client(self):
         return self()
 
-    def check_bucket_exist(self, bucket_name: str) -> list:
-        """
-        Check if bucket name exist
 
-        :param bucket_name:
-        :type bucket_name: str
-        :return:
-        :rtype:
-        """
+def is_valid_bucket_name(bucket_name: str) -> bool:
+    try:
+        if re.match(settings.APP_BUCKET_NAME_PATTERN, bucket_name):
+            return True
+    except exceptions.ParamValidationError as exc:
+        raise CustomHTTPException(
+            error_code=SfsErrorCodes.SFS_INVALID_KEY,
+            error_message=f"Bucket name '{bucket_name}' is invalid."
+            f"The bucket name must contain lowercase letters and numbers,"
+            f" and be between 3 and 63 characters long.",
+            status_code=status.HTTP_400_BAD_REQUEST,
+        ) from exc
 
-        bucket_names = [b["Name"] for b in self.botoclient.list_buckets()["Buckets"]]
-        if bucket_name not in bucket_names:
+
+def check_bucket_exist(bucket_name: str, boto: boto3.client = Depends(BotoClient)) -> str:
+    """
+    Check if bucket name exist
+    """
+
+    try:
+        boto.client.head_bucket(Bucket=bucket_name)
+    except exceptions.ClientError as exc:
+        error_code = int(exc.response.get("Error", {}).get("Code", 0))
+        if error_code == status.HTTP_404_NOT_FOUND:
             raise CustomHTTPException(
                 error_code=SfsErrorCodes.SFS_INVALID_NAME,
-                error_message=f"Bucket '{bucket_name}' not found",
-                status_code=status.HTTP_400_BAD_REQUEST,
-            )
-        return bucket_names
+                error_message=f"Bucket '{bucket_name}' does not exist.",
+                status_code=status.HTTP_404_NOT_FOUND,
+            ) from exc
+        elif error_code == status.HTTP_403_FORBIDDEN:
+            raise CustomHTTPException(
+                error_code=SfsErrorCodes.SFS_ACCESS_DENIED,
+                error_message=f"Access denied to bucket '{bucket_name}'.",
+                status_code=status.HTTP_403_FORBIDDEN,
+            ) from exc
+        else:
+            raise CustomHTTPException(
+                error_code=SfsErrorCodes.SFS_UNKNOWN_ERROR,
+                error_message="An unknown error occurred while checking the bucket.",
+                status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            ) from exc
+    return bucket_name

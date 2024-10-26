@@ -27,3 +27,5 @@ class SfsErrorCodes(StrEnum):
     SFS_INVALID_PERMISSION = "sfs/invalid-permission"
     INTERNAL_SERVER_ERROR = "app/internal-server-error"
     REQUEST_VALIDATION_ERROR = "app/request-validation-error"
+    SFS_ACCESS_DENIED = "sfs/access-denied"
+    SFS_UNKNOWN_ERROR = "sfs/unknown-error"
