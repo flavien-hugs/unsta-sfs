@@ -11,4 +11,4 @@ insert_final_newline = true
 trim_trailing_whitespace = true
 
 [*.{py,rst,ini}]
-max_line_length = 120
+max_line_length = 130
