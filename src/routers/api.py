@@ -3,12 +3,11 @@ import tempfile
 
 import boto3
 from botocore import exceptions
-from fastapi import APIRouter, Depends, File, status, UploadFile, Request
-from fastapi.responses import JSONResponse, Response, StreamingResponse
-from fastapi_pagination import response
+from fastapi import APIRouter, Depends, File, Request, status, UploadFile
+from fastapi.responses import JSONResponse, Response
 from fastapi_pagination.async_paginator import paginate
 
-from src.common.boto_client import check_bucket_exist, get_boto_client, is_valid_bucket_name, replace_minio_url_base
+from src.common.boto_client import check_bucket_exist, get_boto_client, is_valid_bucket_name
 from src.common.error_codes import SfsErrorCodes
 from src.common.exception import CustomHTTPException
 from src.common.functional import customize_page
@@ -16,18 +15,13 @@ from src.config import settings
 from src.schemas import BucketSchema
 
 router: APIRouter = APIRouter(
-    prefix="/buckets",
+    prefix="/storages",
     tags=["BUCKETS"],
     responses={404: {"description": "Not found"}},
 )
 
 
-@router.get(
-    "",
-    response_model=customize_page(BucketSchema),
-    summary="List all buckets",
-    status_code=status.HTTP_200_OK
-)
+@router.get("", response_model=customize_page(BucketSchema), summary="List all buckets", status_code=status.HTTP_200_OK)
 async def list_bucket(boto_client: boto3.client = Depends(get_boto_client)):
     list_buckets = boto_client.list_buckets()
     buckets = list_buckets.get("Buckets", [])
@@ -40,7 +34,7 @@ async def list_bucket(boto_client: boto3.client = Depends(get_boto_client)):
     summary="Create a bucket",
     status_code=status.HTTP_201_CREATED,
 )
-def create_bucket(bucket_name: str, boto_client: boto3.client = Depends(get_boto_client)):
+async def create_bucket(bucket_name: str, boto_client: boto3.client = Depends(get_boto_client)):
     try:
         location = {"LocationConstraint": settings.STORAGE_REGION_NAME}
         boto_client.create_bucket(Bucket=bucket_name, CreateBucketConfiguration=location)
@@ -48,23 +42,16 @@ def create_bucket(bucket_name: str, boto_client: boto3.client = Depends(get_boto
         error_message = exc.response.get("Error", {}).get("Message", "An error occurred")
         status_code = exc.response.get("ResponseMetadata", {}).get("HTTPStatusCode", status.HTTP_400_BAD_REQUEST)
         raise CustomHTTPException(
-            error_code=SfsErrorCodes.SFS_BUCKET_NAME_ALREADY_EXIST,
-            error_message=error_message,
-            status_code=status_code
+            error_code=SfsErrorCodes.SFS_BUCKET_NAME_ALREADY_EXIST, error_message=error_message, status_code=status_code
         ) from exc
 
-    return JSONResponse(
-        content={"message": f"Bucket '{bucket_name}' created successfully."}, status_code=status.HTTP_201_CREATED
-    )
+    return JSONResponse(content={"message": f"Bucket '{bucket_name}' created successfully."}, status_code=status.HTTP_201_CREATED)
 
 
 @router.delete(
-    "/{bucket_name}",
-    dependencies=[Depends(check_bucket_exist)],
-    summary="Delete a bucket",
-    status_code=status.HTTP_200_OK
+    "/{bucket_name}", dependencies=[Depends(check_bucket_exist)], summary="Delete a bucket", status_code=status.HTTP_200_OK
 )
-def delete_bucket(bucket_name: str, boto_client: boto3.client = Depends(get_boto_client)):
+async def delete_bucket(bucket_name: str, boto_client: boto3.client = Depends(get_boto_client)):
     boto_client.delete_bucket(Bucket=bucket_name)
     response = {"message": f"Bucket '{bucket_name}' deleted successfully."}
     return JSONResponse(content=response, status_code=status.HTTP_200_OK)
@@ -101,9 +88,7 @@ def upload_file(bucket_name: str, file: UploadFile = File(...), boto_client: bot
         error_message = exc.response.get("Error", {}).get("Message", "An error occurred")
         status_code = exc.response.get("ResponseMetadata", {}).get("HTTPStatusCode", status.HTTP_400_BAD_REQUEST)
         raise CustomHTTPException(
-            error_code=SfsErrorCodes.SFS_INVALID_NAME,
-            error_message=error_message,
-            status_code=status_code
+            error_code=SfsErrorCodes.SFS_INVALID_NAME, error_message=error_message, status_code=status_code
         ) from exc
 
     response = {"filename": file.filename, "type": file.content_type}
@@ -114,14 +99,9 @@ def upload_file(bucket_name: str, file: UploadFile = File(...), boto_client: bot
     "/{bucket_name}/{filename}",
     dependencies=[Depends(check_bucket_exist)],
     summary="Download file from a bucket",
-    status_code=status.HTTP_200_OK
+    status_code=status.HTTP_200_OK,
 )
-def get_file(
-    request: Request,
-    bucket_name: str,
-    filename: str,
-    boto_client: boto3.client = Depends(get_boto_client)
-):
+def get_file(request: Request, bucket_name: str, filename: str, boto_client: boto3.client = Depends(get_boto_client)):
     try:
         head_object = boto_client.head_object(Bucket=bucket_name, Key=filename)
         boto_client.download_file(Bucket=bucket_name, Filename=filename, Key=filename)
@@ -134,18 +114,13 @@ def get_file(
         response = Response(
             content=file_content,
             status_code=status.HTTP_200_OK,
-            headers={
-                "Content-Disposition": f"attachment;filename={filename}",
-                "Content-Type": content_type
-            },
+            headers={"Content-Disposition": f"attachment;filename={filename}", "Content-Type": content_type},
         )
     except (exceptions.ClientError, exceptions.BotoCoreError) as exc:
         error_message = exc.response.get("Error", {}).get("Message", "An error occurred")
         status_code = exc.response.get("ResponseMetadata", {}).get("HTTPStatusCode", status.HTTP_400_BAD_REQUEST)
         raise CustomHTTPException(
-            error_code=SfsErrorCodes.SFS_INVALID_NAME,
-            error_message=error_message,
-            status_code=status_code
+            error_code=SfsErrorCodes.SFS_INVALID_NAME, error_message=error_message, status_code=status_code
         ) from exc
 
     return response
@@ -155,10 +130,10 @@ def get_file(
     "/{bucket_name}/{filename}",
     dependencies=[Depends(check_bucket_exist)],
     summary="Delete a file from a bucket",
-    status_code=status.HTTP_200_OK
+    status_code=status.HTTP_200_OK,
 )
 def delete_file(bucket_name: str, filename: str, boto_client: boto3.client = Depends(get_boto_client)):
     boto_client.delete_object(Bucket=bucket_name, Key=filename)
-    response = {"message": f"File '{filename}' deleted successfully."}
+    result = {"message": f"File '{filename}' deleted successfully."}
 
-    return JSONResponse(content=response, status_code=status.HTTP_200_OK)
+    return JSONResponse(content=result, status_code=status.HTTP_200_OK)

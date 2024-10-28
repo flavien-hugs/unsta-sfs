@@ -12,7 +12,6 @@ from .exception import CustomHTTPException
 _boto_client: Optional[boto3.client] = None
 
 
-
 def get_boto_client() -> boto3.client:
     global _boto_client
 
@@ -23,7 +22,7 @@ def get_boto_client() -> boto3.client:
                 endpoint_url=settings.STORAGE_HOST,
                 aws_access_key_id=settings.STORAGE_ACCESS_KEY,
                 aws_secret_access_key=settings.STORAGE_SECRET_KEY,
-                region_name=settings.STORAGE_REGION_NAME
+                region_name=settings.STORAGE_REGION_NAME,
             )
         except (exceptions.ClientError, exceptions.BotoCoreError) as err:
             raise CustomHTTPException(
@@ -57,8 +56,8 @@ def is_valid_bucket_name(bucket_name: str) -> str:
         raise CustomHTTPException(
             error_code=SfsErrorCodes.SFS_INVALID_NAME,
             error_message=f"Bucket name '{bucket_name}' is invalid. "
-                          f"The bucket name must contain lowercase letters and numbers,"
-                          f" and be between 3 and 63 characters long.",
+            f"The bucket name must contain lowercase letters and numbers,"
+            f" and be between 3 and 63 characters long.",
             status_code=status.HTTP_400_BAD_REQUEST,
         )
 
