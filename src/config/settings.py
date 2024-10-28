@@ -21,6 +21,7 @@ class SfsBaseSettings(BaseSettings):
     APP_TITLE: Optional[str] = Field(
         default="UNSTA: Simple file storage", alias="APP_TITLE", description="Title of the application"
     )
+    APP_BUCKET_NAME_PATTERN: str = Field(default=r"^[a-z0-9]{3,63}$", alias="APP_BUCKET_NAME_PATTERN")
 
     # STORAGE SETTINGS
     STORAGE_HOST: str = Field(..., alias="STORAGE_HOST")

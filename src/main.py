@@ -4,7 +4,7 @@ from fastapi_pagination import add_pagination
 from slugify import slugify
 
 from src.config import settings
-from src.routers import sfs_router
+from src.routers import router
 from src.common.exception import setup_exception_handlers
 
 slugify_app_name = slugify(settings.APP_NAME)
@@ -28,6 +28,6 @@ async def ping():
 
 
 # Add pagination to the app
-app.include_router(router=sfs_router)
+app.include_router(router=router)
 add_pagination(app)
 setup_exception_handlers(app)
