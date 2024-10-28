@@ -43,7 +43,7 @@ repos:
       -
         id: black
         args:
-          - --line-length=128
+          - --line-length=130
           - --include='\.pyi?$'
           - --exclude="""\.git |
             \.__pycache__|
@@ -63,7 +63,7 @@ repos:
           - flake8-bugbear
           - flake8-implicit-str-concat
         args:
-          - "--max-line-length=128"
+          - "--max-line-length=130"
           - "--select=B,C,E,F,W,T4,B9"
           - "--ignore=B006,B008,B010,B903,B907,E203,E231,E501,E701,W503"
           - "--builtins=F821, F405"

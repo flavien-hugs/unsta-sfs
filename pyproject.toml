@@ -8,11 +8,11 @@ packages = [{include = "src"}]
 [tool.poetry.dependencies]
 python = "3.12.3"
 fastapi = {extras = ["standard"], version = "^0.115.3"}
-boto3 = "^1.35.48"
 python-slugify = "^8.0.4"
 fastapi-pagination = "^0.12.31"
 pydantic-settings = "^2.6.0"
 uvloop = "^0.21.0"
+boto3 = "^1.35.49"
 
 
 [tool.poetry.group.dev.dependencies]
@@ -34,7 +34,7 @@ pytest-mock = "^3.14.0"
 faker = "^30.8.1"
 
 [tool.flake8]
-max-line-length = 120
+max-line-length = 130
 exclude = [
     ".git",
     "__pycache__",
@@ -45,7 +45,7 @@ exclude = [
 ]
 
 [tool.black]
-line-length = 120
+line-length = 130
 include = '\.pyi?$'
 exclude = '''
 (
