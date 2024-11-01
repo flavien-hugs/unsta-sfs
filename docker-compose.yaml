@@ -18,8 +18,6 @@ services:
             - minio.local
         volumes:
             - ./src:/app/src
-        ports:
-            - "9995:${APP_DEFAULT_PORT}"
         logging: *logging
 
     minio.local:
@@ -36,9 +34,6 @@ services:
             interval: 5s
             timeout: 5s
             retries: 5
-        ports:
-            - "${STORAGE_API_PORT}:${STORAGE_API_PORT}"
-            - "${STORAGE_CONSOLE_PORT}:${STORAGE_CONSOLE_PORT}"
         command: server --console-address ":${STORAGE_API_PORT}" /data
         volumes:
             - minio_storage:/data
@@ -50,8 +45,6 @@ services:
         environment:
             MONGO_INITDB_ROOT_USERNAME: "${MONGO_USER}"
             MONGO_INITDB_ROOT_PASSWORD: "${MONGO_PASSWORD}"
-        ports:
-            - "27044:${MONGO_PORT:-27017}"
         volumes:
             - sfs_data:/data/db
         logging: *logging
