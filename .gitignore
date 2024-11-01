@@ -172,3 +172,4 @@ k8s/secrets.yml
 notebook.ipynb
 dotenv/
 .ruff_cache
+docker-compose.local.yaml

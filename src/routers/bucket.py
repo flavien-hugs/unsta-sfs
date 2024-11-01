@@ -7,10 +7,10 @@ from fastapi import APIRouter, Depends, File, Request, status, UploadFile
 from fastapi.responses import JSONResponse, Response
 from fastapi_pagination.async_paginator import paginate
 
-from src.common.boto_client import check_bucket_exist, get_boto_client, is_valid_bucket_name
+from src.common.boto_client import check_bucket_exists, get_boto_client
 from src.common.error_codes import SfsErrorCodes
 from src.common.exception import CustomHTTPException
-from src.common.functional import customize_page
+from src.common.functional import customize_page, format_bucket
 from src.config import settings
 from src.schemas import BucketSchema
 
@@ -30,7 +30,7 @@ async def list_bucket(boto_client: boto3.client = Depends(get_boto_client)):
 
 @router.post(
     "",
-    dependencies=[Depends(is_valid_bucket_name)],
+    dependencies=[Depends(format_bucket)],
     summary="Create a bucket",
     status_code=status.HTTP_201_CREATED,
 )
@@ -49,7 +49,7 @@ async def create_bucket(bucket_name: str, boto_client: boto3.client = Depends(ge
 
 
 @router.delete(
-    "/{bucket_name}", dependencies=[Depends(check_bucket_exist)], summary="Delete a bucket", status_code=status.HTTP_200_OK
+    "/{bucket_name}", dependencies=[Depends(check_bucket_exists)], summary="Delete a bucket", status_code=status.HTTP_200_OK
 )
 async def delete_bucket(bucket_name: str, boto_client: boto3.client = Depends(get_boto_client)):
     boto_client.delete_bucket(Bucket=bucket_name)
@@ -59,7 +59,7 @@ async def delete_bucket(bucket_name: str, boto_client: boto3.client = Depends(ge
 
 @router.get(
     "/{bucket_name}",
-    dependencies=[Depends(check_bucket_exist)],
+    dependencies=[Depends(check_bucket_exists)],
     response_model=customize_page(str),
     summary="List all files in a bucket",
     status_code=status.HTTP_200_OK,
@@ -73,7 +73,7 @@ async def list_files(bucket_name: str, boto_client: boto3.client = Depends(get_b
 
 @router.put(
     "/{bucket_name}",
-    dependencies=[Depends(check_bucket_exist)],
+    dependencies=[Depends(check_bucket_exists)],
     summary="Upload a file to a bucket",
     status_code=status.HTTP_202_ACCEPTED,
 )
@@ -97,7 +97,7 @@ def upload_file(bucket_name: str, file: UploadFile = File(...), boto_client: bot
 
 @router.get(
     "/{bucket_name}/{filename}",
-    dependencies=[Depends(check_bucket_exist)],
+    dependencies=[Depends(check_bucket_exists)],
     summary="Download file from a bucket",
     status_code=status.HTTP_200_OK,
 )
@@ -128,7 +128,7 @@ def get_file(request: Request, bucket_name: str, filename: str, boto_client: bot
 
 @router.delete(
     "/{bucket_name}/{filename}",
-    dependencies=[Depends(check_bucket_exist)],
+    dependencies=[Depends(check_bucket_exists)],
     summary="Delete a file from a bucket",
     status_code=status.HTTP_200_OK,
 )
