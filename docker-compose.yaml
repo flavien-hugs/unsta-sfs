@@ -14,13 +14,12 @@ services:
         restart: always
         command: poetry run app
         depends_on:
+            - mongo.local
             - minio.local
         volumes:
             - ./src:/app/src
         ports:
             - "9995:${APP_DEFAULT_PORT}"
-        env_file:
-            - ./dotenv/app.env
         logging: *logging
 
     minio.local:
@@ -29,6 +28,9 @@ services:
         environment:
             MINIO_ROOT_USER: "${STORAGE_ROOT_USER}"
             MINIO_ROOT_PASSWORD: "${STORAGE_ROOT_PASSWORD}"
+            MINIO_ACCESS_KEY: "${STORAGE_ACCESS_KEY}"
+            MINIO_SECRET_KEY: "${STORAGE_SECRET_KEY}"
+            MINIO_REGION_NAME: "${STORAGE_REGION_NAME:-af-south-1}"
         healthcheck:
             test: [ "CMD", "mc", "ready", "local" ]
             interval: 5s
@@ -40,10 +42,25 @@ services:
         command: server --console-address ":${STORAGE_API_PORT}" /data
         volumes:
             - minio_storage:/data
-        env_file:
-            - ./dotenv/storage.env
         logging: *logging
 
+    mongo.local:
+        image: mongo:7.0.12
+        restart: always
+        environment:
+            MONGO_INITDB_ROOT_USERNAME: "${MONGO_USER}"
+            MONGO_INITDB_ROOT_PASSWORD: "${MONGO_PASSWORD}"
+        ports:
+            - "27044:${MONGO_PORT:-27017}"
+        volumes:
+            - sfs_data:/data/db
+        logging: *logging
+
+networks:
+    sfs_network:
+        driver: bridge
+
 volumes:
+    sfs_data:
     minio_storage:
         driver: local
