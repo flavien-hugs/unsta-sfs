@@ -1,7 +1,9 @@
 import pytest
 from unittest import mock
+
 from starlette import status
 
+from src.routers import media
 from src.config import settings
 from botocore import exceptions
 from src.common.error_codes import SfsErrorCodes
@@ -92,19 +94,19 @@ async def test_delete_bucket(http_client_api, mock_boto_client, fake_data):
 
 
 async def test_upload_file_bucket_success(http_client_api, mock_boto_client, fake_data):
-    mock_boto_client.upload_file.return_value = None
+    media.upload_file.return_value = None
 
     bucket_name = fake_data.name()
     response = await http_client_api.put(f"/storages/{bucket_name}", files={"file": ("sfs.txt", "test")})
     assert response.status_code == status.HTTP_202_ACCEPTED
     assert response.json() == {"filename": "sfs.txt", "type": "text/plain"}
 
-    mock_boto_client.upload_file.assert_called_once_with(Filename=mock.ANY, Bucket=bucket_name, Key="sfs.txt")
-    mock_boto_client.upload_file.assert_called_once()
+    media.upload_file.assert_called_once_with(Filename=mock.ANY, Bucket=bucket_name, Key="sfs.txt")
+    media.upload_file.assert_called_once()
 
 
 async def test_upload_file_bucket_not_found(http_client_api, mock_boto_client, fake_data):
-    mock_boto_client.upload_file.side_effect = exceptions.ClientError(
+    media.upload_file.side_effect = exceptions.ClientError(
         error_response={
             "Error": {
                 "Code": "NoSuchBucket",
@@ -121,5 +123,5 @@ async def test_upload_file_bucket_not_found(http_client_api, mock_boto_client, f
     assert response.json()["error_code"] == SfsErrorCodes.SFS_INVALID_NAME
     assert response.json()["error_message"] == "The specified bucket does not exist"
 
-    mock_boto_client.upload_file.assert_called_once_with(Filename=mock.ANY, Bucket=bucket_name, Key="sfs.txt")
-    mock_boto_client.upload_file.assert_called_once()
+    media.upload_file.assert_called_once_with(Filename=mock.ANY, Bucket=bucket_name, Key="sfs.txt")
+    media.upload_file.assert_called_once()

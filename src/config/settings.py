@@ -21,7 +21,14 @@ class SfsBaseSettings(BaseSettings):
     APP_TITLE: Optional[str] = Field(
         default="UNSTA: Simple file storage", alias="APP_TITLE", description="Title of the application"
     )
-    APP_BUCKET_NAME_PATTERN: str = Field(default=r"^[a-z0-9]{3,63}$", alias="APP_BUCKET_NAME_PATTERN")
+    HASH_SECRET_KEY: str = Field(..., alias="HASH_SECRET_KEY")
+    FILE_TTL_DAYS: int = Field(default=7, alias="FILE_TTL_DAYS")
+
+    # DATABASE CONFIG
+    MONGO_DB: str = Field(..., alias="MONGO_DB")
+    MONGODB_URI: str = Field(..., alias="MONGODB_URI")
+    MEDIA_DB_COLLECTION: str = Field(..., alias="MEDIA_DB_COLLECTION")
+    BUCKET_DB_COLLECTION: str = Field(..., alias="BUCKET_DB_COLLECTION")
 
     # STORAGE SETTINGS
     STORAGE_HOST: str = Field(..., alias="STORAGE_HOST")
