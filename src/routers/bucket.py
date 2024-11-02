@@ -27,7 +27,7 @@ bucket_router: APIRouter = APIRouter(
     status_code=status.HTTP_201_CREATED,
 )
 async def create_bucket(bucket: BucketSchema = Body(...), botoclient: boto3.client = Depends(get_boto_client)):
-    new_bucket = await create_new_bucket(bucket, botoclient=botoclient)
+    new_bucket = await create_new_bucket(bucket=bucket, botoclient=botoclient)
     return new_bucket
 
 
