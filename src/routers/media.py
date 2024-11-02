@@ -2,7 +2,7 @@ import json
 from typing import Optional
 
 import boto3
-from fastapi import APIRouter, BackgroundTasks, Body, Depends, File, Query, status, UploadFile
+from fastapi import APIRouter, BackgroundTasks, Depends, File, Form, Query, status, UploadFile
 from fastapi_pagination.async_paginator import paginate as async_paginate
 from pymongo import ASCENDING, DESCENDING
 
@@ -29,9 +29,9 @@ media_router: APIRouter = APIRouter(
     status_code=status.HTTP_202_ACCEPTED,
 )
 async def upload_file_to_buckect(
-    bucket_name: str,
-    file: UploadFile = File(...),
-    tags: Optional[str] = Body(
+    bucket_name: str = Form(..., description="Bucket name to upload the file"),
+    file: UploadFile = File(..., description="File to be uploaded"),
+    tags: Optional[str] = Form(
         None,
         examples=['{"category":"documents","author":"John Doe"}'],
         description="Tags to be added to the file as a JSON string",
@@ -59,7 +59,7 @@ async def list_media(
 ):
     search = {}
     if query.bucket_name:
-        await check_bucket_exists(bucket_name=query.bucket_name, botoclient=botoclient)
+        check_bucket_exists(bucket_name=query.bucket_name, botoclient=botoclient)
         search.update({"bucket_name": {"$regex": query.bucket_name, "$options": "i"}})
     if query.tags:
         del query["tags"]
