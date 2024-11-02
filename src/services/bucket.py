@@ -22,7 +22,6 @@ async def create_new_bucket(bucket: BucketSchema, botoclient: boto3.client = Dep
     """
 
     bucket_name = format_bucket(bucket.bucket_name)
-
     try:
         botoclient.head_bucket(Bucket=bucket_name)
         raise CustomHTTPException(
@@ -52,7 +51,7 @@ async def create_new_bucket(bucket: BucketSchema, botoclient: boto3.client = Dep
         else:
             raise CustomHTTPException(
                 error_code=SfsErrorCodes.SFS_INVALID_NAME,
-                error_message=f"Error checking bucket: {str(exc)}",
+                error_message=str(exc),
                 status_code=status.HTTP_400_BAD_REQUEST,
             ) from exc
 
@@ -75,21 +74,16 @@ async def get_or_create_bucket(
     :rtype: Bucket
     """
 
-    if not await Bucket.find_one({"bucket_slug": bucket_name}).exists():
-        if create_bucket_if_not_exist:
-            return await create_new_bucket(bucket=BucketSchema(bucket_name=bucket_name), botoclient=botoclient)
-        else:
-            raise CustomHTTPException(
-                error_code=SfsErrorCodes.SFS_BUCKET_NOT_FOUND,
-                error_message=f"Bucket '{bucket_name}' not found.",
-                status_code=status.HTTP_404_NOT_FOUND,
-            )
-
-    if create_bucket_if_not_exist:
+    bucket = await Bucket.find_one({"bucket_slug": bucket_name})
+    if bucket is None and create_bucket_if_not_exist:
+        return await create_new_bucket(bucket=BucketSchema(bucket_name=bucket_name), botoclient=botoclient)
+    elif bucket and not create_bucket_if_not_exist:
+        return bucket
+    else:
         raise CustomHTTPException(
-            error_code=SfsErrorCodes.SFS_BUCKET_NAME_ALREADY_EXIST,
-            error_message=f"Bucket '{bucket_name}' already exists.",
-            status_code=status.HTTP_409_CONFLICT,
+            error_code=SfsErrorCodes.SFS_BUCKET_NOT_FOUND,
+            error_message=f"Bucket '{bucket_name}' not found.",
+            status_code=status.HTTP_400_BAD_REQUEST,
         )
 
 
