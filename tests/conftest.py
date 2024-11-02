@@ -62,8 +62,21 @@ async def default_bucket(fixture_models, bucket_data):
     return result
 
 
+@pytest.fixture()
+def media_data(fake_data):
+    file_name = fake_data.file_name()
+    return {"filename": file_name, "bucket_name": "unsta-storage", "name_in_minio": file_name, "tags": {"tag": "value"}}
+
+
+@pytest.mark.asyncio
+@pytest.fixture()
+async def default_media(fixture_models, media_data, fake_data):
+    result = await fixture_models.Media(**media_data, url=fake_data.url()).create()
+    return result
+
+
 @pytest.fixture
-async def http_bucket_api(mock_app_instance, fixture_client_mongo, mock_boto_client):
+async def http_client_api(mock_app_instance, fixture_client_mongo, mock_boto_client):
     from src.common.boto_client import get_boto_client
 
     mock_app_instance.dependency_overrides[get_boto_client] = lambda: mock_boto_client
