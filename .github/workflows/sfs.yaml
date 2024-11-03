@@ -106,7 +106,7 @@ jobs:
                 echo "Logged in to Github Docker registry"
 
             - name: 'Determine image tag and build (improved logic)'
-              id: build-image
+              id: build
               run: |
                 if [[ "${{ github.event_name }}" == "push" ]]; then
                   BRANCH_NAME="${{ github.ref_name }}"
