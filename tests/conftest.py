@@ -35,6 +35,25 @@ async def mongo_client():
 
 
 @pytest.fixture(autouse=True)
+def mock_check_access_allow():
+    mock_response = mock.Mock()
+    mock_response.is_success = True
+    mock_response.json.return_value = {"access": True}
+
+    async def mock_httpx_get(*args, **kwargs):
+        return mock_response
+
+    async def mock_async_context_manager():
+        mock_client = mock.AsyncMock()
+        mock_client.get.return_value = mock_response
+        return mock_client
+
+    with mock.patch("httpx.AsyncClient") as mock_client:
+        mock_client.return_value.__aenter__.side_effect = mock_async_context_manager
+        yield mock_client
+
+
+@pytest.fixture(autouse=True)
 def mock_boto_client():
     with mock.patch("src.common.boto_client.boto3.client", return_value=mock.Mock()) as mock_client:
         yield mock_client
