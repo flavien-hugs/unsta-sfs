@@ -5,11 +5,11 @@ on:
     branches:
       - main
       - develop
-
+  workflow_dispatch:
 
 jobs:
     quality-code:
-        name: "Code Quality"
+        name: "Quality code"
         strategy:
             fail-fast: false
             matrix:
@@ -18,33 +18,31 @@ jobs:
                 os: [ubuntu-latest]
         runs-on: ${{ matrix.os }}
         steps:
-            - name: Checkout code
+            - name: 'Checkout code'
               uses: actions/checkout@v3
 
-            - name: Setup Python ${{ matrix.python-version }}
+            - name: 'Setup Python ${{ matrix.python-version }}'
               uses: actions/setup-python@v3
               with:
                 python-version: ${{ matrix.python-version }}
                 architecture: 'x64'
 
-            - name: Install pipx, poetry and upgrade pip/setuptools
-              run: |
-                python --version
-                python -m pip install pipx
-                python -m pipx ensurepath
-                python -m pipx install poetry
-                export PATH=$PATH:/root/.local/bin
-                poetry env use python
-                poetry run pip install --upgrade pip setuptools
-                poetry add black flake8 bandit
+            - name: 'Setup cache pip and poetry'
+              uses: ./.github/actions/cache-package-managment
 
-            - name: Run black
+            - name: 'Setup python environment'
+              uses: ./.github/actions/setup-python-environment
+
+            - name: 'Install dependencies'
+              run: poetry add black flake8 bandit
+
+            - name: 'Run black'
               run: poetry run black . --check
 
-            - name: Run flake8
+            - name: 'Run flake8'
               run: poetry run flake8 .
 
-            - name: Run bandit
+            - name: 'Run bandit'
               run: poetry run bandit .
 
 
@@ -60,33 +58,60 @@ jobs:
                 os: [ubuntu-latest]
         runs-on: ${{ matrix.os }}
         steps:
-            - name: Checkout code
+            - name: 'Checkout code'
               uses: actions/checkout@v3
 
-            - name: Setup Python ${{ matrix.python-version }}
+            - name: 'Cache pip and poetry'
+              uses: ./.github/actions/cache-package-managment
+
+            - name: 'Setup Python ${{ matrix.python-version }}'
               uses: actions/setup-python@v3
               with:
                 python-version: ${{ matrix.python-version }}
                 architecture: 'x64'
 
-            - name: Install pipx, poetry and upgrade pip/setuptools
-              run: |
-                python --version
-                python -m pip install pipx
-                python -m pipx ensurepath
-                python -m pipx install poetry
-                export PATH=$PATH:/root/.local/bin
-                poetry env use python
-                poetry run pip install --upgrade pip setuptools
-                poetry add pytest
+            - name: 'Setup python environment'
+              uses: ./.github/actions/setup-python-environment
 
-            - name: Run pytest
+            - name: 'Install dependencies'
+              run: poetry install --no-root
+
+            - name: 'Run pytest'
               run: |
                 echo "Running pytest"
                 poetry run pytest --cov --cov-report term --cov-report xml:coverage.xml tests
 
-            - name: Upload coverage report
+            - name: 'Upload coverage report'
               uses: actions/upload-artifact@v3
               with:
                 name: coverage-report
                 path: coverage.xml
+
+    create-docker-image:
+        needs: [test-code]
+        runs-on: ubuntu-latest
+        environment:
+            name: ${{ (github.ref == 'refs/heads/main' && 'latest') || (github.ref == 'refs/heads/develop' && 'dev') }}
+        steps:
+            - name: 'Checkout code'
+              uses: actions/checkout@v3
+
+            - name: 'Login to Gihtub Docker registry'
+              env:
+                GHRC_PASSWORD: ${{ secrets.GHRC_PASSWORD }}
+              run: |
+                echo "Logging in to Github Docker registry"
+                echo "$GHRC_PASSWORD" | docker login ghcr.io -u ${{ github.actor }} --password-stdin
+                echo "Logged in to Github Docker registry"
+
+            - name: 'Build Docker image'
+              env:
+                BRANCH_NAME: ${{ github.ref_name }}
+                BRANCH_TAG_NAME: ${{ github.ref == 'refs/heads/main' && 'latest' || (github.ref == 'refs/heads/develop' && 'dev') }}
+                GHRC_REGISTRY_ADDR: ${{ secrets.GHRC_REGISTRY_ADDR }}
+              run: |
+                echo "Building Docker image for branch: $BRANCH_NAME"
+                echo "Building Docker image with tag: $BRANCH_TAG_NAME"
+                docker build --no-cache -t $GHRC_REGISTRY_ADDR:$DOCKER_TAG_NAME .
+                docker push $GHRC_REGISTRY_ADDR:$DOCKER_TAG_NAME
+                echo "Docker image built and pushed to Github Docker registry"
