@@ -1,0 +1,16 @@
+name: 'Setup Python Environment'
+description: 'Setup Python Environment for GitHub Actions'
+runs:
+    using: 'composite'
+    steps:
+        - name: Install pipx, poetry and upgrade pip/setuptools
+          shell: bash
+          run: |
+            python --version
+            python -m pip install pipx
+            python -m pipx ensurepath
+            python -m pipx install poetry
+            export PATH=$PATH:/root/.local/bin
+            poetry env use python
+            poetry run pip install --upgrade pip setuptools
+            poetry install --no-root
