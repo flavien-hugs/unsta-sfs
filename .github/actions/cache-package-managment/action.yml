@@ -1,22 +1,20 @@
-name: 'Cache pip and poetry'
-description: 'Cache pip and poetry for GitHub Actions'
+name: 'Cache Package Management'
+description: 'Cache pip and poetry dependencies'
+inputs:
+    cache-key:
+        description: 'The key for the cache'
+        required: true
 runs:
     using: 'composite'
     steps:
         - name: 'Cache pip'
-          shell: bash
           uses: actions/cache@v3
           with:
             path: ~/.cache/pip
-            key: ${{ runner.os }}-pip-${{ hashFiles('**/poetry.lock') }}
-            restore-keys: |
-              ${{ runner.os }}-pip-
+            key: ${{ inputs.cache-key }}-pip
 
         - name: 'Cache poetry'
-          shell: bash
           uses: actions/cache@v3
           with:
             path: ~/.cache/pypoetry
-            key: ${{ runner.os }}-pypoetry-${{ hashFiles('**/poetry.lock') }}
-            restore-keys: |
-              ${{ runner.os }}-pypoetry-
+            key: ${{ inputs.cache-key }}-pypoetry-
