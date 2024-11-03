@@ -5,7 +5,6 @@ on:
     branches:
       - main
       - develop
-  workflow_dispatch:
 
 jobs:
     quality-code:
@@ -29,6 +28,8 @@ jobs:
 
             - name: 'Setup cache pip and poetry'
               uses: ./.github/actions/cache-package-managment
+              with:
+                  cache-key: ${{ runner.os }}-pip-poetry-${{ hashFiles('**/poetry.lock') }}
 
             - name: 'Setup python environment'
               uses: ./.github/actions/setup-python-environment
@@ -44,7 +45,6 @@ jobs:
 
             - name: 'Run bandit'
               run: poetry run bandit .
-
 
     test-code:
         name: "Test Code"
@@ -63,6 +63,8 @@ jobs:
 
             - name: 'Cache pip and poetry'
               uses: ./.github/actions/cache-package-managment
+              with:
+                cache-key: ${{ runner.os }}-pip-poetry-${{ hashFiles('**/poetry.lock') }}
 
             - name: 'Setup Python ${{ matrix.python-version }}'
               uses: actions/setup-python@v3
@@ -97,21 +99,37 @@ jobs:
               uses: actions/checkout@v3
 
             - name: 'Login to Gihtub Docker registry'
-              env:
-                GHRC_PASSWORD: ${{ secrets.GHRC_PASSWORD }}
               run: |
                 echo "Logging in to Github Docker registry"
-                echo "$GHRC_PASSWORD" | docker login ghcr.io -u ${{ github.actor }} --password-stdin
+                echo "${{ secrets.GHRC_PASSWORD }}" | \
+                  docker login ghcr.io -u "${{ secrets.GHRC_USERNAME }}" --password-stdin
                 echo "Logged in to Github Docker registry"
 
-            - name: 'Build Docker image'
-              env:
-                BRANCH_NAME: ${{ github.ref_name }}
-                BRANCH_TAG_NAME: ${{ github.ref == 'refs/heads/main' && 'latest' || (github.ref == 'refs/heads/develop' && 'dev') }}
-                GHRC_REGISTRY_ADDR: ${{ secrets.GHRC_REGISTRY_ADDR }}
+            - name: 'Determine image tag and build (improved logic)'
+              id: build-image
               run: |
+                if [[ "${{ github.event_name }}" == "push" ]]; then
+                  BRANCH_NAME="${{ github.ref_name }}"
+                elif [[ "${{ github.event_name }}" == "pull_request" ]]; then
+                  BRANCH_NAME="${{ github.base_ref }}"
+                else
+                  echo "Unsupported event: ${{ github.event_name }}"
+                  exit 1
+                fi
+
+                echo "Branch name: $BRANCH_NAME"
+
+                if [[ "$BRANCH_NAME" == "main" || "$BRANCH_NAME" == "master" ]]; then
+                  BRANCH_TAG_NAME="latest"
+                elif [[ "$BRANCH_NAME" == "develop" ]]; then
+                  BRANCH_TAG_NAME="dev"
+                else
+                  echo "No valid tag found for branch $BRANCH_NAME, exiting..."
+                  exit 1
+                fi
+
                 echo "Building Docker image for branch: $BRANCH_NAME"
                 echo "Building Docker image with tag: $BRANCH_TAG_NAME"
-                docker build --no-cache -t $GHRC_REGISTRY_ADDR:$DOCKER_TAG_NAME .
-                docker push $GHRC_REGISTRY_ADDR:$DOCKER_TAG_NAME
+                docker build --no-cache -t ${{ secrets.GHRC_REGISTRY_ADDR }}:$DOCKER_TAG_NAME .
+                docker push ${{ secrets.GHRC_REGISTRY_ADDR }}:$DOCKER_TAG_NAME
                 echo "Docker image built and pushed to Github Docker registry"
