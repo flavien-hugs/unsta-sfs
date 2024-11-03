@@ -1,0 +1,134 @@
+name: "CI for SFS project"
+
+on:
+  pull_request:
+    branches:
+      - main
+      - develop
+
+jobs:
+    quality-code:
+        name: "Quality code"
+        strategy:
+            fail-fast: false
+            matrix:
+                python-version:
+                    - '3.12.3'
+                os: [ubuntu-latest]
+        runs-on: ${{ matrix.os }}
+        steps:
+            - name: 'Checkout code'
+              uses: actions/checkout@v3
+
+            - name: 'Setup Python ${{ matrix.python-version }}'
+              uses: actions/setup-python@v3
+              with:
+                python-version: ${{ matrix.python-version }}
+                architecture: 'x64'
+
+            - name: 'Setup cache pip and poetry'
+              uses: ./.github/actions/cache-package-managment
+              with:
+                  cache-key: ${{ runner.os }}-pip-poetry-${{ hashFiles('**/poetry.lock') }}
+
+            - name: 'Setup python environment'
+              uses: ./.github/actions/setup-python-environment
+
+            - name: 'Install dependencies'
+              run: poetry add black flake8 bandit
+
+            - name: 'Run black'
+              run: poetry run black . --check
+
+            - name: 'Run flake8'
+              run: poetry run flake8 .
+
+            - name: 'Run bandit'
+              run: poetry run bandit .
+
+    test-code:
+        name: "Test Code"
+        needs: [quality-code]
+        strategy:
+            fail-fast: false
+            max-parallel: 4
+            matrix:
+                python-version:
+                    - '3.12.3'
+                os: [ubuntu-latest]
+        runs-on: ${{ matrix.os }}
+        steps:
+            - name: 'Checkout code'
+              uses: actions/checkout@v3
+
+            - name: 'Cache pip and poetry'
+              uses: ./.github/actions/cache-package-managment
+              with:
+                cache-key: ${{ runner.os }}-pip-poetry-${{ hashFiles('**/poetry.lock') }}
+
+            - name: 'Setup Python ${{ matrix.python-version }}'
+              uses: actions/setup-python@v3
+              with:
+                python-version: ${{ matrix.python-version }}
+                architecture: 'x64'
+
+            - name: 'Setup python environment'
+              uses: ./.github/actions/setup-python-environment
+
+            - name: 'Install dependencies'
+              run: poetry install --no-root
+
+            - name: 'Run pytest'
+              run: |
+                echo "Running pytest"
+                poetry run pytest --cov --cov-report term --cov-report xml:coverage.xml tests
+
+            - name: 'Upload coverage report'
+              uses: actions/upload-artifact@v3
+              with:
+                name: coverage-report
+                path: coverage.xml
+
+    create-docker-image:
+        needs: [test-code]
+        runs-on: ubuntu-latest
+        environment:
+            name: ${{ (github.ref == 'refs/heads/main' && 'latest') || (github.ref == 'refs/heads/develop' && 'dev') }}
+        steps:
+            - name: 'Checkout code'
+              uses: actions/checkout@v3
+
+            - name: 'Login to Gihtub Docker registry'
+              run: |
+                echo "Logging in to Github Docker registry"
+                echo "${{ secrets.GHRC_PASSWORD }}" | \
+                  docker login ghcr.io -u "${{ secrets.GHRC_USERNAME }}" --password-stdin
+                echo "Logged in to Github Docker registry"
+
+            - name: 'Determine image tag and build (improved logic)'
+              id: build
+              run: |
+                if [[ "${{ github.event_name }}" == "push" ]]; then
+                  BRANCH_NAME="${{ github.ref_name }}"
+                elif [[ "${{ github.event_name }}" == "pull_request" ]]; then
+                  BRANCH_NAME="${{ github.base_ref }}"
+                else
+                  echo "Unsupported event: ${{ github.event_name }}"
+                  exit 1
+                fi
+
+                echo "Branch name: $BRANCH_NAME"
+
+                if [[ "$BRANCH_NAME" == "main" || "$BRANCH_NAME" == "master" ]]; then
+                  DOCKER_TAG_NAME="latest"
+                elif [[ "$BRANCH_NAME" == "develop" ]]; then
+                  DOCKER_TAG_NAME="dev"
+                else
+                  echo "No valid tag found for branch $BRANCH_NAME, exiting..."
+                  exit 1
+                fi
+
+                echo "Building Docker image with tag: $DOCKER_TAG_NAME ..."
+                docker build --no-cache -t ${{ secrets.GHRC_REGISTRY_ADDR }}:$DOCKER_TAG_NAME .
+                docker push ${{ secrets.GHRC_REGISTRY_ADDR }}:$DOCKER_TAG_NAME
+                echo "Docker image built and pushed to Github Docker registry"

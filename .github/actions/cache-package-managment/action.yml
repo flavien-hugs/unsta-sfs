@@ -1,0 +1,20 @@
+name: 'Cache Package Management'
+description: 'Cache pip and poetry dependencies'
+inputs:
+    cache-key:
+        description: 'The key for the cache'
+        required: true
+runs:
+    using: 'composite'
+    steps:
+        - name: 'Cache pip'
+          uses: actions/cache@v3
+          with:
+            path: ~/.cache/pip
+            key: ${{ inputs.cache-key }}-pip
+
+        - name: 'Cache poetry'
+          uses: actions/cache@v3
+          with:
+            path: ~/.cache/pypoetry
+            key: ${{ inputs.cache-key }}-pypoetry-
