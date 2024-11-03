@@ -1,0 +1,92 @@
+name: "CI for SFS project"
+
+on:
+  pull_request:
+    branches:
+      - main
+      - develop
+
+
+jobs:
+    quality-code:
+        name: "Code Quality"
+        strategy:
+            fail-fast: false
+            matrix:
+                python-version:
+                    - '3.12.3'
+                os: [ubuntu-latest]
+        runs-on: ${{ matrix.os }}
+        steps:
+            - name: Checkout code
+              uses: actions/checkout@v3
+
+            - name: Setup Python ${{ matrix.python-version }}
+              uses: actions/setup-python@v3
+              with:
+                python-version: ${{ matrix.python-version }}
+                architecture: 'x64'
+
+            - name: Install pipx, poetry and upgrade pip/setuptools
+              run: |
+                python --version
+                python -m pip install pipx
+                python -m pipx ensurepath
+                python -m pipx install poetry
+                export PATH=$PATH:/root/.local/bin
+                poetry env use python
+                poetry run pip install --upgrade pip setuptools
+                poetry add black flake8 bandit
+
+            - name: Run black
+              run: poetry run black . --check
+
+            - name: Run flake8
+              run: poetry run flake8 .
+
+            - name: Run bandit
+              run: poetry run bandit .
+
+
+    test-code:
+        name: "Test Code"
+        needs: [quality-code]
+        strategy:
+            fail-fast: false
+            max-parallel: 4
+            matrix:
+                python-version:
+                    - '3.12.3'
+                os: [ubuntu-latest]
+        runs-on: ${{ matrix.os }}
+        steps:
+            - name: Checkout code
+              uses: actions/checkout@v3
+
+            - name: Setup Python ${{ matrix.python-version }}
+              uses: actions/setup-python@v3
+              with:
+                python-version: ${{ matrix.python-version }}
+                architecture: 'x64'
+
+            - name: Install pipx, poetry and upgrade pip/setuptools
+              run: |
+                python --version
+                python -m pip install pipx
+                python -m pipx ensurepath
+                python -m pipx install poetry
+                export PATH=$PATH:/root/.local/bin
+                poetry env use python
+                poetry run pip install --upgrade pip setuptools
+                poetry add pytest
+
+            - name: Run pytest
+              run: |
+                echo "Running pytest"
+                poetry run pytest --cov --cov-report term --cov-report xml:coverage.xml tests
+
+            - name: Upload coverage report
+              uses: actions/upload-artifact@v3
+              with:
+                name: coverage-report
+                path: coverage.xml
