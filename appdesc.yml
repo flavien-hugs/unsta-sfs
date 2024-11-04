@@ -5,30 +5,30 @@
         en: "File storage and management service"
     permissions:
         - code: "sfs:can-read-bucket"
-          title:
+          desc:
             fr: "Peut lire un dossier d'images"
             en: "Can read an image folder"
         - code: "sfs:can-create-bucket"
-          title:
+          desc:
             fr: "Peut créer un dossier d'images"
             en: "Can create an image folder"
         - code: "sfs:can-delete-bucket"
-          title:
+          desc:
             fr: "Peut supprimer un dossier d'images"
             en: "Can delete an image folder"
         - code: "sfs:can-write-bucket"
-          title:
+          desc:
             fr: "Peut écrire dans un dossier d'images"
             en: "Can write in an image folder"
         - code: "sfs:can-read-file"
-          title:
+          desc:
             fr: "Peut lire un fichier"
             en: "Can read a file"
         - code: "sfs:can-write-file"
-          title:
+          desc:
             fr: "Peut ajouter un fichier dans un dossier d'images"
             en: "Can add a file in an image folder"
         - code: "sfs:can-delete-file"
-          title:
+          desc:
             fr: "Peut supprimer un fichier"
             en: "Can delete a file"
