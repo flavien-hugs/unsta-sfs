@@ -8,6 +8,7 @@ from pymongo import ASCENDING, DESCENDING
 
 from src.common.boto_client import get_boto_client
 from src.common.functional import customize_page
+from src.common.permissions import CheckAccessAllow
 from src.common.utils import SortEnum
 from src.models import Bucket
 from src.schemas import BucketFilter, BucketSchema
@@ -22,6 +23,7 @@ bucket_router: APIRouter = APIRouter(
 
 @bucket_router.post(
     "",
+    dependencies=[Depends(CheckAccessAllow(permissions={"sfs:can-create-bucket"}))],
     response_model=Bucket,
     summary="Create a bucket",
     status_code=status.HTTP_201_CREATED,
@@ -31,7 +33,13 @@ async def create_bucket(bucket: BucketSchema = Body(...), botoclient: boto3.clie
     return new_bucket
 
 
-@bucket_router.get("", response_model=customize_page(Bucket), summary="List all buckets", status_code=status.HTTP_200_OK)
+@bucket_router.get(
+    "",
+    dependencies=[Depends(CheckAccessAllow(permissions={"sfs:can-read-bucket"}))],
+    response_model=customize_page(Bucket),
+    summary="List all buckets",
+    status_code=status.HTTP_200_OK,
+)
 async def list_buckets(
     query: BucketFilter = Depends(BucketFilter),
     sort: Optional[SortEnum] = Query(default=SortEnum.DESC, alias="sort", description="Sort by 'asc' or 'desc"),
@@ -49,7 +57,13 @@ async def list_buckets(
     return await paginate(buckets)
 
 
-@bucket_router.get("/{bucket_name}", response_model=Bucket, summary="Get a bucket", status_code=status.HTTP_200_OK)
+@bucket_router.get(
+    "/{bucket_name}",
+    dependencies=[Depends(CheckAccessAllow(permissions={"sfs:can-read-bucket"}))],
+    response_model=Bucket,
+    summary="Get a bucket",
+    status_code=status.HTTP_200_OK,
+)
 async def get_bucket(
     bucket_name: str,
     create_bucket_if_not_exist: bool = Query(default=False, description="Create the bucket if it doesn't exist"),
@@ -70,7 +84,12 @@ async def get_bucket(
     return bucket
 
 
-@bucket_router.delete("/{bucket_name}", summary="Delete a bucket", status_code=status.HTTP_200_OK)
+@bucket_router.delete(
+    "/{bucket_name}",
+    dependencies=[Depends(CheckAccessAllow(permissions={"sfs:can-delete-bucket"}))],
+    summary="Delete a bucket",
+    status_code=status.HTTP_200_OK,
+)
 async def remove_bucket(bucket_name: str, botoclient: boto3.client = Depends(get_boto_client)):
     await delete_bucket(bucket_name, botoclient)
     response = {"message": f"Bucket '{bucket_name}' deleted successfully."}

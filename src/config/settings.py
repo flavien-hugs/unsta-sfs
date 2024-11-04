@@ -40,6 +40,10 @@ class SfsBaseSettings(BaseSettings):
     STORAGE_ROOT_PASSWORD: str = Field(..., alias="STORAGE_ROOT_PASSWORD")
     STORAGE_REGION_NAME: Optional[str] = Field(default="af-south-1", alias="STORAGE_REGION_NAME")
 
+    # AUTH ENDPOINT CONFIG
+    API_AUTH_URL_BASE: str = Field(..., alias="API_AUTH_URL_BASE")
+    API_AUTH_CHECK_ACCESS_ENDPOINT: str = Field(..., alias="API_AUTH_CHECK_ACCESS_ENDPOINT")
+
 
 @lru_cache()
 def sfs_settings() -> SfsBaseSettings:

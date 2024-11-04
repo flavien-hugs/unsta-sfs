@@ -14,3 +14,4 @@ class SfsErrorCodes(StrEnum):
     INTERNAL_SERVER_ERROR = "app/internal-server-error"
     REQUEST_VALIDATION_ERROR = "app/request-validation-error"
     SFS_BUCKET_NAME_ALREADY_EXIST = "sfs/bucket-name-alreay-exist"
+    AUTH_ACCESS_DENIED = "app/service-access-denied"

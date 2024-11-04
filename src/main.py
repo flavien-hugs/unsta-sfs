@@ -8,6 +8,7 @@ from src.config import settings
 from src.config.database import shutdown_db_client, startup_db_client
 from src.routers import bucket_router, media_router
 from src.common.exception import setup_exception_handlers
+from src.common.setup_app_perms import load_app_description, load_app_permissions
 
 from src.models import Bucket, Media
 
@@ -17,6 +18,10 @@ slugify_app_name = slugify(settings.APP_NAME)
 @asynccontextmanager
 async def lifespan(app: FastAPI):
     await startup_db_client(app=app, models=[Bucket, Media])
+
+    await load_app_description(mongodb_client=app.mongo_db_client)
+    await load_app_permissions(mongodb_client=app.mongo_db_client)
+
     yield
 
     await shutdown_db_client(app=app)

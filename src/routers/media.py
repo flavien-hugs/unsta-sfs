@@ -8,6 +8,7 @@ from pymongo import ASCENDING, DESCENDING
 
 from src.common.boto_client import check_bucket_exists, get_boto_client
 from src.common.error_codes import SfsErrorCodes
+from src.common.permissions import CheckAccessAllow
 from src.common.exception import CustomHTTPException
 from src.common.functional import customize_page
 from src.common.utils import SortEnum
@@ -24,6 +25,7 @@ media_router: APIRouter = APIRouter(
 
 @media_router.post(
     "",
+    dependencies=[Depends(CheckAccessAllow(permissions={"sfs:can-write-bucket"}))],
     response_model=Media,
     summary="Upload a file to an S3 object.",
     status_code=status.HTTP_202_ACCEPTED,
@@ -51,7 +53,13 @@ async def upload_file_to_buckect(
     return result
 
 
-@media_router.get("", response_model=customize_page(Media), summary="List media files", status_code=status.HTTP_200_OK)
+@media_router.get(
+    "",
+    dependencies=[Depends(CheckAccessAllow(permissions={"sfs:can-read-file"}))],
+    response_model=customize_page(Media),
+    summary="List media files",
+    status_code=status.HTTP_200_OK,
+)
 async def list_media(
     query: MediaFilter = Depends(MediaFilter),
     sort: Optional[SortEnum] = Query(default=SortEnum.DESC, alias="sort", description="Sort by 'asc' or 'desc"),
@@ -73,14 +81,14 @@ async def list_media(
 
 @media_router.get(
     "/{bucket_name}/{filename}",
-    dependencies=[Depends(check_bucket_exists)],
+    dependencies=[Depends(CheckAccessAllow(permissions={"sfs:can-read-file"}))],
     summary="Get media url",
     status_code=status.HTTP_200_OK,
 )
 async def get_media_url(
     bg: BackgroundTasks,
-    bucket_name: str,
     filename: str,
+    bucket_name: str = Depends(check_bucket_exists),
     download: bool = Query(default=False),
     botoclient: boto3.client = Depends(get_boto_client),
 ):
@@ -89,13 +97,19 @@ async def get_media_url(
     return await get_media(bucket_name=bucket_name, filename=filename, botoclient=botoclient)
 
 
-@media_router.get("/{filename}", summary="Get media", status_code=status.HTTP_200_OK)
+@media_router.get(
+    "/{filename}",
+    summary="Get media",
+    status_code=status.HTTP_200_OK,
+    dependencies=[Depends(CheckAccessAllow(permissions={"sfs:can-read-file"}))],
+)
 async def get_media_view(filename: str):
     pass
 
 
 @media_router.delete(
     "/{bucket_name}/{filename}",
+    dependencies=[Depends(CheckAccessAllow(permissions={"sfs:can-delete-file"}))],
     summary="Delete a file from a bucket",
     status_code=status.HTTP_204_NO_CONTENT,
 )
