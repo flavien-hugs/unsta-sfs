@@ -47,36 +47,6 @@ async def __load_app_description(filpath) -> dict:
     return data
 
 
-async def __load_app_data(
-    mongodb_client: AsyncIOMotorClient,
-    collection_path: str,
-    filename: str,
-    data_key: str,
-    update_key: str,
-    update_value: callable,
-):
-    """
-    Load app data from a JSON file and update the database.
-    """
-
-    coll = await __init_collection(mongodb_client, collection_path)
-
-    filepath = BASE_DIR / f"{filename}"
-    data = await __load_app_description(filepath)
-
-    if not (appname := data[0].get("app", {}).get("name", "").strip()):
-        raise ValueError(f"App name '{appname}' not found in {filepath}")
-
-    if not (value := data[0].get("app", {}).get(data_key, {})):
-        raise ValueError(f"{data_key} section for app '{appname}' not found in {filepath}")
-
-    await coll.update_one(
-        {"app": slugify(appname)},
-        {"$set": {update_key: update_value(value)}},
-        upsert=True,
-    )
-
-
 async def load_app_description(
     mongodb_client: AsyncIOMotorClient,
     collection_path: str = None,
@@ -89,15 +59,21 @@ async def load_app_description(
     if not (coll_path := collection_path or os.environ.get("APP_DESC_DB_COLLECTION")):
         raise ValueError("Invalid collection path")
 
-    await __init_collection(mongodb_client, coll_path)
+    coll = await __init_collection(mongodb_client, coll_path)
 
-    await __load_app_data(
-        mongodb_client,
-        coll_path,
-        filename,
-        "title",
-        "title",
-        lambda value: value,
+    filepath = BASE_DIR / f"{filename}"
+    data = await __load_app_description(filepath)
+
+    if not (appname := data[0].get("app", {}).get("name", "").strip()):
+        raise ValueError(f"App name '{appname}' not found in {filepath}")
+
+    if not (title := data[0].get("app", {}).get("title", {})):
+        raise ValueError(f"title section for app '{appname}' not found in {filepath}")
+
+    await coll.update_one(
+        {"app": slugify(appname)},
+        {"$set": {"title": title}},
+        upsert=True,
     )
 
 
@@ -113,17 +89,25 @@ async def load_app_permissions(
     if not (coll_path := collection_path or os.environ.get("PERMS_DB_COLLECTION")):
         raise ValueError("Invalid collection path")
 
-    await __load_app_data(
-        mongodb_client,
-        coll_path,
-        filename,
-        "permissions",
-        "permissions",
-        lambda value: [
-            {
-                "code": slugify(perm.get("code", ""), regex_pattern=r"[^a-zA-Z0-9:]+"),
-                "desc": perm.get("desc", ""),
+    coll = await __init_collection(mongodb_client, coll_path)
+
+    filepath = BASE_DIR / f"{filename}"
+    data = await __load_app_description(filepath)
+
+    if not (appname := data[0].get("app", {}).get("name", "").strip()):
+        raise ValueError(f"App name '{appname}' not found in {filepath}")
+
+    if not (permissions := data[0].get("app", {}).get("permissions", [])):
+        return
+
+    await coll.update_one(
+        {"app": slugify(appname)},
+        {
+            "$set": {
+                "permissions": [
+                    {"code": slugify(item["code"], regex_pattern=r"[^a-zA-Z0-9:]+"), "desc": item["desc"]} for item in permissions
+                ]
             }
-            for perm in value
-        ],
+        },
+        upsert=True,
     )
