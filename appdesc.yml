@@ -1,34 +1,58 @@
-- app:
-    name: "sfs"
+-
+  app:
+    name: "likya"
     title:
-        fr: "Service de stockage et gestion de fichiers"
-        en: "File storage and management service"
+      fr: "LIKYA: Plateforme de financement participatif (crowdfunding) pour le domaine médical"
+      en: "LIKYA: Crowdfunding platform for the medical field"
     permissions:
-        - code: "sfs:can-read-bucket"
-          desc:
-            fr: "Peut lire un dossier d'images"
-            en: "Can read an image folder"
-        - code: "sfs:can-create-bucket"
-          desc:
-            fr: "Peut créer un dossier d'images"
-            en: "Can create an image folder"
-        - code: "sfs:can-delete-bucket"
-          desc:
-            fr: "Peut supprimer un dossier d'images"
-            en: "Can delete an image folder"
-        - code: "sfs:can-write-bucket"
-          desc:
-            fr: "Peut écrire dans un dossier d'images"
-            en: "Can write in an image folder"
-        - code: "sfs:can-read-file"
-          desc:
-            fr: "Peut lire un fichier"
-            en: "Can read a file"
-        - code: "sfs:can-write-file"
-          desc:
-            fr: "Peut ajouter un fichier dans un dossier d'images"
-            en: "Can add a file in an image folder"
-        - code: "sfs:can-delete-file"
-          desc:
-            fr: "Peut supprimer un fichier"
-            en: "Can delete a file"
+      -
+        code: "likya:can-create-category"
+        desc:
+          fr: "Peut créer une catégorie"
+          en: "Can create a category"
+      -
+        code: "likya:can-read-category"
+        desc:
+          fr: "Peut afficher une catégorie"
+          en: "Can display a category"
+      -
+        code: "likya:can-update-category"
+        desc:
+          fr: "Peut modifier une catégorie"
+          en: "Can modify a category"
+      -
+        code: "likya:can-delete-category"
+        desc:
+          fr: "Peut supprimer une catégorie"
+          en: "Can delete a category"
+
+      -
+        code: "likya:can-create-fundraising"
+        desc:
+          fr: "Peut créer une campagne de financement"
+          en: "Can create a fundraising campaign"
+      -
+        code: "likya:can-read-fundraising"
+        desc:
+          fr: "Peut afficher une campagne de financement"
+          en: "Can display a fundraising campaign"
+      -
+        code: "likya:can-update-fundraising"
+        desc:
+          fr: "Peut modifier une campagne de financement"
+          en: "Can modify a fundraising campaign"
+      -
+        code: "likya:can-delete-fundraising"
+        desc:
+          fr: "Peut supprimer une campagne de financement"
+          en: "Can delete a fundraising campaign"
+      -
+        code: "likya:can-update-fundraising-access"
+        desc:
+          fr: "Peut modifier l'accès à une campagne de financement"
+          en: "Can modify access to a fundraising campaign"
+      -
+        code: "likya:validate-or-reject-fundraising"
+        desc:
+          fr: "Peut valider ou rejeter une campagne de financement"
+          en: "Can validate or reject a fundraising campaign"
