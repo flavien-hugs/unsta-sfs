@@ -38,6 +38,7 @@ class SfsBaseSettings(BaseSettings):
     STORAGE_SECRET_KEY: str = Field(..., alias="STORAGE_SECRET_KEY")
     STORAGE_CONSOLE_PORT: int = Field(..., alias="STORAGE_CONSOLE_PORT")
     STORAGE_ROOT_PASSWORD: str = Field(..., alias="STORAGE_ROOT_PASSWORD")
+    STORAGE_BROWSER_REDIRECT_URL: str = Field(..., alias="STORAGE_BROWSER_REDIRECT_URL")
     STORAGE_REGION_NAME: Optional[str] = Field(default="af-south-1", alias="STORAGE_REGION_NAME")
 
     # AUTH ENDPOINT CONFIG

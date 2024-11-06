@@ -1,8 +1,10 @@
 import json
 from typing import Optional
+from mimetypes import guess_type
 
 import boto3
 from fastapi import APIRouter, BackgroundTasks, Depends, File, Form, Query, status, UploadFile
+from fastapi.responses import StreamingResponse
 from fastapi_pagination.async_paginator import paginate as async_paginate
 from pymongo import ASCENDING, DESCENDING
 
@@ -80,31 +82,41 @@ async def list_media(
 
 
 @media_router.get(
+    "/{bucket_name}/{filename}/_read", summary="Get media url", status_code=status.HTTP_200_OK, include_in_schema=False
+)
+@media_router.get(
     "/{bucket_name}/{filename}",
     dependencies=[Depends(CheckAccessAllow(permissions={"sfs:can-read-file"}))],
-    summary="Get media url",
+    summary="Retrieve single media",
     status_code=status.HTTP_200_OK,
 )
-async def get_media_url(
+async def get_media_obj(
     bg: BackgroundTasks,
+    bucket_name: str,
     filename: str,
-    bucket_name: str = Depends(check_bucket_exists),
     download: bool = Query(default=False),
     botoclient: boto3.client = Depends(get_boto_client),
 ):
     if download:
         return await download_media(bucket_name=bucket_name, filename=filename, bg=bg, botoclient=botoclient)
-    return await get_media(bucket_name=bucket_name, filename=filename, botoclient=botoclient)
+    else:
+        media = await get_media(bucket_name=bucket_name, filename=filename, botoclient=botoclient)
 
+        content_type = media.get("ContentType")
+        if not content_type:
+            content_type, _ = guess_type(filename)
+            if not content_type:
+                content_type = "application/octet-stream"
 
-@media_router.get(
-    "/{filename}",
-    summary="Get media",
-    status_code=status.HTTP_200_OK,
-    dependencies=[Depends(CheckAccessAllow(permissions={"sfs:can-read-file"}))],
-)
-async def get_media_view(filename: str):
-    pass
+        return StreamingResponse(
+            content=media["Body"],
+            media_type=content_type,
+            headers={
+                "Content-Length": str(media.get("ContentLength")),
+                "ETag": media.get("ETag"),
+                "Content-Disposition": f'inline; filename="{filename}"',
+            },
+        )
 
 
 @media_router.delete(
