@@ -40,14 +40,14 @@ async def create_new_bucket(bucket: BucketSchema, botoclient: boto3.client = Dep
                 botoclient.put_bucket_policy(Bucket=bucket_name, Policy=policy_document)
 
                 new_doc_bucket = await Bucket(bucket_slug=bucket_name, **bucket.model_dump()).create()
-
-                return new_doc_bucket
             except (exceptions.ClientError, exceptions.BotoCoreError) as exc:
                 error_message = exc.response.get("Error", {}).get("Message", "An error occurred")
                 status_code = exc.response.get("ResponseMetadata", {}).get("HTTPStatusCode", status.HTTP_400_BAD_REQUEST)
                 raise CustomHTTPException(
                     error_code=SfsErrorCodes.SFS_BUCKET_NAME_ALREADY_EXIST, error_message=error_message, status_code=status_code
                 ) from exc
+
+            return new_doc_bucket
         else:
             raise CustomHTTPException(
                 error_code=SfsErrorCodes.SFS_INVALID_NAME,

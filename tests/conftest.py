@@ -90,7 +90,8 @@ def media_data(fake_data):
 @pytest.mark.asyncio
 @pytest.fixture()
 async def default_media(fixture_models, media_data, fake_data):
-    result = await fixture_models.Media(**media_data, url=fake_data.url()).create()
+    url = settings.STORAGE_BROWSER_REDIRECT_URL + f"/media/{media_data['bucket_name']}/{media_data['filename']}"
+    result = await fixture_models.Media(**media_data, url=url).create()
     return result
 
 
