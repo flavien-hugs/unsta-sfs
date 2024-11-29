@@ -3,7 +3,7 @@ from enum import StrEnum
 
 class SfsErrorCodes(StrEnum):
     SFS_INVALID_KEY = "sfs/invalid-key"
-    SFS_INVALID_TAGS = "sfs/invalid-tags"
+    SFS_INVALID_TAGS_FORMAT = "sfs/invalid-tags-format"
     SFS_INVALID_DATA = "sfs/invalid-data"
     SFS_INVALID_NAME = "sfs/invalid-name"
     SFS_INVALID_FILE = "sfs/invalid-file"
@@ -15,3 +15,4 @@ class SfsErrorCodes(StrEnum):
     REQUEST_VALIDATION_ERROR = "app/request-validation-error"
     SFS_BUCKET_NAME_ALREADY_EXIST = "sfs/bucket-name-alreay-exist"
     AUTH_ACCESS_DENIED = "app/service-access-denied"
+    SFS_FILE_NOT_FOUND = "sfs/file-not-found"

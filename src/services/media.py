@@ -1,5 +1,6 @@
 import os
 import tempfile
+from datetime import datetime
 from typing import Optional
 from urllib.parse import urljoin
 
@@ -10,7 +11,7 @@ from fastapi.responses import FileResponse
 from typing_extensions import deprecated
 from urllib3 import BaseHTTPResponse, HTTPResponse
 
-from src.common.boto_client import get_boto_client
+from src.common.boto_client import get_boto_client, check_bucket_exists
 from src.common.error_codes import SfsErrorCodes
 from src.common.exception import CustomHTTPException
 from src.common.functional import format_bucket, generate_media_name, replace_minio_url_base
@@ -26,6 +27,8 @@ def _upload_media_to_minio(
     bucket_name: str = Depends(format_bucket),
     botoclient: boto3.client = Depends(get_boto_client),
 ):
+    check_bucket_exists(bucket_name, botoclient=botoclient)
+
     with tempfile.NamedTemporaryFile(delete=False) as temp_file:
         temp_file.write(file.file.read())
 
@@ -36,13 +39,14 @@ def _upload_media_to_minio(
             extra_args["Tagging"] = "&".join([f"{tag['Key']}:{tag['Value']}" for tag in tag_set])
 
         response = botoclient.upload_file(Filename=temp_file.name, Bucket=bucket_name, Key=key, ExtraArgs=extra_args)
-        os.remove(temp_file.name)
     except (exceptions.ClientError, exceptions.BotoCoreError) as exc:
         error_message = exc.response.get("Error", {}).get("Message", "An error occurred")
         status_code = exc.response.get("ResponseMetadata", {}).get("HTTPStatusCode", status.HTTP_400_BAD_REQUEST)
         raise CustomHTTPException(
             error_code=SfsErrorCodes.SFS_INVALID_NAME, error_message=error_message, status_code=status_code
         ) from exc
+
+    os.remove(temp_file.name)
 
     return response
 
@@ -100,13 +104,20 @@ async def upload_media(
     bucket_name: str,
     tags: Optional[dict] = None,
     file: UploadFile = File(...),
+    is_public: Optional[bool] = False,
+    ttl_minutes: Optional[int] = None,
     botoclient: boto3.client = Depends(get_boto_client),
 ):
     extension = file.filename.split(".")[-1]
-    media_name = generate_media_name(extension=extension)
+    media_name = await generate_media_name(extension=extension)
 
     media_schema = MediaSchema(
-        bucket_name=bucket_name, name_in_minio=media_name, tags=tags if tags else None, filename=media_name
+        bucket_name=bucket_name,
+        name_in_minio=media_name,
+        tags=tags if tags else None,
+        filename=media_name,
+        is_public=is_public,
+        ttl_minutes=ttl_minutes,
     )
     media = await _save_media(media=media_schema, file=file, botoclient=botoclient)
     return media
@@ -189,3 +200,24 @@ async def download_media(
     )
 
     return response
+
+
+async def find_public_media(bucket_name: str, filename: str):
+    pipeline = [
+        {"$match": {"bucket_name": bucket_name, "name_in_minio": filename, "is_public": True}},
+        {
+            "$addFields": {
+                "expiration_time": {
+                    "$cond": {
+                        "if": {"$ne": ["$ttl_minutes", None]},
+                        "then": {"$add": ["$updated_at", {"$multiply": ["$ttl_minutes", 60000]}]},  # 1mn -> ms
+                        "else": None,
+                    }
+                }
+            }
+        },
+        {"$match": {"$or": [{"expiration_time": {"$gt": datetime.now()}}, {"expiration_time": None}]}},
+    ]
+
+    media_from_db = await Media.aggregate(pipeline).to_list()
+    return media_from_db

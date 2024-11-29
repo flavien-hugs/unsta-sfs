@@ -81,7 +81,7 @@ def format_bucket(bucket_name: str) -> str:
     return formatted
 
 
-def generate_media_name(extension: str) -> str:
+async def generate_media_name(extension: str) -> str:
     """
     Generates a unique media_router file name using the current timestamp, a UUID, and the provided file extension.
 

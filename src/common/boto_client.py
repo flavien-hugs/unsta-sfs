@@ -48,7 +48,7 @@ def check_bucket_exists(bucket_name: str, botoclient: boto3.client = Depends(get
 
     try:
         botoclient.head_bucket(Bucket=bucket_name)
-        _log.warning(f"==> Bucket '{bucket_name}' already exists.")
+        _log.warning(f"==> Bucket '{bucket_name}' exists.")
     except (exceptions.ClientError, exceptions.BotoCoreError) as exc:
         error_message = exc.response.get("Error", {}).get("Message", "An error occurred")
         status_code = int(exc.response.get("ResponseMetadata", {}).get("HTTPStatusCode", status.HTTP_400_BAD_REQUEST))
@@ -56,13 +56,13 @@ def check_bucket_exists(bucket_name: str, botoclient: boto3.client = Depends(get
         if status_code == status.HTTP_404_NOT_FOUND:
             raise CustomHTTPException(
                 error_code=SfsErrorCodes.SFS_INVALID_NAME,
-                error_message=error_message,
+                error_message=f"Bucket '{bucket_name}' does not exist. Please create it first. {error_message}",
                 status_code=status.HTTP_404_NOT_FOUND,
             ) from exc
         elif status_code == status.HTTP_403_FORBIDDEN:
             raise CustomHTTPException(
                 error_code=SfsErrorCodes.SFS_ACCESS_DENIED,
-                error_message=error_message,
+                error_message=f"Access denied to check the bucket '{bucket_name}'.",
                 status_code=status.HTTP_403_FORBIDDEN,
             ) from exc
         else:
