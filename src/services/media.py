@@ -1,6 +1,5 @@
 import os
 import tempfile
-from datetime import datetime
 from typing import Optional
 from urllib.parse import urljoin
 

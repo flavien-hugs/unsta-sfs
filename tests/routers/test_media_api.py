@@ -92,7 +92,6 @@ async def test_upload_media_invalid_tags(http_client_api, default_bucket, fake_d
     )
     assert response.status_code == status.HTTP_400_BAD_REQUEST, response.text
     assert response.json()["error_code"] == SfsErrorCodes.SFS_INVALID_TAGS_FORMAT
-
     mock_check_access_allow.assert_called_once()
 
 
